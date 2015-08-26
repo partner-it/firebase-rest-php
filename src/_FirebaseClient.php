@@ -1,6 +1,6 @@
 <?php
 
-namespace PartnerIT\FireBase;
+namespace PartnerIT\Firebase;
 
 use Firebase\Token\TokenException;
 use Firebase\Token\TokenGenerator;
@@ -8,7 +8,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\HandlerStack;
 
-class FireBaseClient
+class FirebaseClient
 {
 
 	/**
@@ -80,7 +80,7 @@ class FireBaseClient
 	/**
 	 * @param $method
 	 * @param $args
-	 * @return FireBaseResponse
+	 * @return FirebaseResponse
 	 */
 	public function __call($method, $args)
 	{
@@ -102,9 +102,9 @@ class FireBaseClient
 			$uri = urlencode($uri);
 			$response = $this->guzzleClient->request($method, $uri, $opts);
 
-			return new FireBaseResponse($response);
+			return new FirebaseResponse($response);
 		} catch (ClientException $e) {
-			return new FireBaseResponse($e->getResponse());
+			return new FirebaseResponse($e->getResponse());
 		}
 	}
 
@@ -122,7 +122,7 @@ class FireBaseClient
 
 	/**
 	 * @param $uri
-	 * @return FireBaseResponse
+	 * @return FirebaseResponse
 	 */
 	public function stream($uri)
 	{
