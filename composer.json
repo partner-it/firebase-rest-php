@@ -1,0 +1,23 @@
+{
+  "name": "partner-it/firebase-rest-php",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": ">=5.4",
+    "guzzlehttp/guzzle": "~6.0",
+    "firebase/token-generator": "~2.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "PartnerIT\\Firebase\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "PartnerIT\\Firebase\\Test\\": "tests"
+    }
+  }
+}
