@@ -17,7 +17,7 @@ Create a new client instance:
 ```
 <?php
 
-$fireBaseClient = new FireBaseClient([
+$fireBaseClient = new FirebaseClient([
 			'base_uri' => 'https://xyz.firebaseio.com',
 ]);
 
@@ -54,7 +54,7 @@ $response = $fireBaseClient->post('/mypath', ['json' => ['key' => 'value']]);
 
 ```
 
-The returned object is a `FireBaseResponse` object, to just get the data use
+The returned object is a `FirebaseResponse` object, to just get the data use
 
 ```
 <?php

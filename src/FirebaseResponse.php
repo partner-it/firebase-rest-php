@@ -1,13 +1,13 @@
 <?php
 
-namespace PartnerIT\FireBase;
+namespace PartnerIT\Firebase;
 
 use Psr\Http\Message\ResponseInterface;
 
 /**
- * Class FireBaseResponse
+ * Class FirebaseResponse
  */
-class FireBaseResponse
+class FirebaseResponse
 {
 
 	/**
