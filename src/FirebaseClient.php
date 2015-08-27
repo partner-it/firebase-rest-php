@@ -8,6 +8,15 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\HandlerStack;
 
+/**
+ * Class FirebaseClient
+ * @package PartnerIT\Firebase
+ * @method FirebaseResponse get() get(string $uri, array $options)
+ * @method FirebaseResponse put() put(string $uri, array $options)
+ * @method FirebaseResponse post() post(string $uri, array $options)
+ * @method FirebaseResponse patch() patch(string $uri, array $options)
+ * @method FirebaseResponse delete() delete(string $uri, array $options)
+ */
 class FirebaseClient
 {
 
