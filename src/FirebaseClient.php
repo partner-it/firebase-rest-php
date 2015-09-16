@@ -87,6 +87,13 @@ class FirebaseClient
 	}
 
 	/**
+	 * @return mixed
+	 */
+	public function getToken() {
+		return $this->token;
+	}
+
+	/**
 	 * @param $method
 	 * @param $args
 	 * @return FirebaseResponse
