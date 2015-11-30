@@ -151,5 +151,17 @@ class FirebaseClient
 			'stream'          => true
 		]);
 	}
-
+	
+	/**
+     * Decodes a token.
+     *
+     * @param string $secret
+     *
+     * @return object
+     */
+    public function decodeToken($secret)
+    {
+        return \JWT::decode($this->token, $secret, ['HS256']);
+    }
+    
 }
