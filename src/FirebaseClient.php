@@ -2,11 +2,11 @@
 
 namespace PartnerIT\Firebase;
 
-use Firebase\Token\TokenException;
-use Firebase\Token\TokenGenerator;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\HandlerStack;
+use Lcobucci\JWT\Builder;
+use Lcobucci\JWT\Signer\Rsa\Sha256;
 
 /**
  * Class FirebaseClient
@@ -35,21 +35,35 @@ class FirebaseClient
 	 */
 	private $stack;
 
+    /**
+     * @var string
+     */
+	private $privateKey;
+
+    /**
+     * @var string
+     */
+    private $serviceAccount;
+
 	/**
 	 * @param array $config
 	 */
 	public function __construct(array $config = [])
 	{
-		if (isset($config['base_uri'])) {
+	    if (!isset($config['privateKey']) ||!isset($config['baseUri']) ||!isset($config['serviceAccount']) )
+        {
+            throw new \InvalidArgumentException('Config must include a `baseUri`, `privateKey` and `serviceAccount`');
+
+        }
+
+        $this->privateKey = $config['privateKey'];
+        $this->serviceAccount = $config['serviceAccount'];
 
 			$this->stack = HandlerStack::create();
 			$this->guzzleClient = new Client([
 				'handler'  => $this->stack,
-				'base_uri' => $config['base_uri'],
+				'base_uri' => $config['baseUri'],
 			]);
-		} else {
-			throw new \InvalidArgumentException('Config must include a `base_uri`');
-		}
 	}
 
 	/**
@@ -59,23 +73,29 @@ class FirebaseClient
 		$this->guzzleClient = $guzzleClient;
 	}
 
-	/**
-	 * @param $secret
-	 * @param $uid
-	 * @param bool $admin
-	 * @throws TokenException
-	 */
-	public function generateToken($secret, $uid, $admin = false)
+    /**
+     * @param $secret
+     * @param $uid
+     * @param bool $admin
+     * @return $this
+     */
+	public function generateToken($uid, $admin = false)
 	{
+        $signer = new Sha256();
+        $token = (new Builder())
+            ->setIssuer($this->serviceAccount)// Configures the issuer (iss claim)
+            ->setSubject($this->serviceAccount)// Configures the issuer (sub claim)
+            ->setAudience('https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit')//(aud claim)
+            ->setIssuedAt(time())// Configures the time that the token was issue (iat claim)
+            ->setExpiration(time() + 3600)// Configures the expiration time of the token (exp claim)
+            ->setId(uniqid(), true)// Configures the id (jti claim), replicating as a header item
+            ->set('uid', $uid)// Configures a new claim, called "uid"
+            ->set('admin', $admin)
+            ->sign($signer, $this->privateKey)
+            ->getToken();
+            $this->token = (string)$token;
 
-		$tokenGenerator = new TokenGenerator($secret);
-		$tokenGenerator->setData(['uid' => $uid]);
-
-		if ($admin) {
-			$tokenGenerator->setOption('admin', true);
-		}
-
-		$this->token = $tokenGenerator->create();
+            return $this;
 	}
 
 	/**
@@ -151,7 +171,7 @@ class FirebaseClient
 			'stream'          => true
 		]);
 	}
-	
+
 	/**
      * Decodes a token.
      *
@@ -163,5 +183,5 @@ class FirebaseClient
     {
         return \JWT::decode($this->token, $secret, ['HS256']);
     }
-    
+
 }
