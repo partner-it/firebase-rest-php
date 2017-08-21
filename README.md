@@ -1,5 +1,6 @@
 # firebase-rest-php
-PHP Wrapper for the Firebase REST API
+
+PHP Wrapper for the 3.x version of Firebase REST API
 
 
 ## Installation
