@@ -20,58 +20,61 @@ use Lcobucci\JWT\Signer\Rsa\Sha256;
 class FirebaseClient
 {
 
-	/**
-	 * @var Client
-	 */
-	private $guzzleClient;
+    /**
+     * @var Client
+     */
+    private $guzzleClient;
 
-	/**
-	 * @var
-	 */
-	private $token;
+    /**
+     * @var
+     */
+    private $token;
 
-	/**
-	 * @var HandlerStack
-	 */
-	private $stack;
+    /**
+     * @var HandlerStack
+     */
+    private $stack;
 
     /**
      * @var string
      */
-	private $privateKey;
+    private $privateKey;
 
     /**
      * @var string
      */
     private $serviceAccount;
 
-	/**
-	 * @param array $config
-	 */
-	public function __construct(array $config = [])
-	{
-	    if (!isset($config['privateKey']) ||!isset($config['baseUri']) ||!isset($config['serviceAccount']) )
-        {
+    private $apikey;
+
+    /**
+     * @param array $config
+     */
+    public function __construct(array $config = [])
+    {
+        if (!isset($config['privateKey']) || !isset($config['baseUri']) || !isset($config['serviceAccount'])) {
             throw new \InvalidArgumentException('Config must include a `baseUri`, `privateKey` and `serviceAccount`');
 
         }
 
-        $this->privateKey = $config['privateKey'];
+        $this->apikey         = $config['apiKey'];
+        $this->privateKey     = $config['privateKey'];
         $this->serviceAccount = $config['serviceAccount'];
 
-			$this->stack = HandlerStack::create();
-			$this->guzzleClient = new Client([
-				'handler'  => $this->stack,
-				'base_uri' => $config['baseUri'],
-			]);
-	}
+        $this->stack        = HandlerStack::create();
+        $this->guzzleClient = new Client([
+            'handler'  => $this->stack,
+            'base_uri' => $config['baseUri'],
+        ]);
+    }
 
-	/**
-	 * @param Client $guzzelClient
-	 */
-	public function setGuzzleClient(Client $guzzleClient) {
-		$this->guzzleClient = $guzzleClient;
-	}
+    /**
+     * @param Client $guzzelClient
+     */
+    public function setGuzzleClient(Client $guzzleClient)
+    {
+        $this->guzzleClient = $guzzleClient;
+    }
 
     /**
      * @param $secret
@@ -79,10 +82,10 @@ class FirebaseClient
      * @param bool $admin
      * @return $this
      */
-	public function generateToken($uid, $admin = false)
-	{
-        $signer = new Sha256();
-        $token = (new Builder())
+    public function generateToken($uid, $admin = false)
+    {
+        $signer      = new Sha256();
+        $token       = (new Builder())
             ->setIssuer($this->serviceAccount)// Configures the issuer (iss claim)
             ->setSubject($this->serviceAccount)// Configures the issuer (sub claim)
             ->setAudience('https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit')//(aud claim)
@@ -93,86 +96,101 @@ class FirebaseClient
             ->set('admin', $admin)
             ->sign($signer, $this->privateKey)
             ->getToken();
-            $this->token = (string)$token;
+        $this->token = (string)$token;
 
-            return $this;
-	}
+        return $this;
+    }
 
-	/**
-	 * @param $token
-	 */
-	public function setToken($token)
-	{
-		$this->token = $token;
-	}
+    /**
+     * @param $token
+     */
+    public function setToken($token)
+    {
+        $this->token = $token;
+    }
 
-	/**
-	 * @return mixed
-	 */
-	public function getToken() {
-		return $this->token;
-	}
+    /**
+     * @return mixed
+     */
+    public function getToken()
+    {
+        return $this->token;
+    }
 
-	/**
-	 * @param $method
-	 * @param $args
-	 * @return FirebaseResponse
-	 */
-	public function __call($method, $args)
-	{
+    /**
+     * @param $method
+     * @param $args
+     * @return FirebaseResponse
+     */
+    public function __call($method, $args)
+    {
 
-		if (count($args) < 1) {
-			throw new \InvalidArgumentException('Magic request methods require a URI and optional options array');
-		}
+        if (count($args) < 1) {
+            throw new \InvalidArgumentException('Magic request methods require a URI and optional options array');
+        }
 
-		$uri = $args[0] . '.json';
-		$opts = isset($args[1]) ? $args[1] : [];
+        $uri  = $args[0] . '.json';
+        $opts = isset($args[1]) ? $args[1] : [];
 
-		if (isset($opts['query'])) {
-			$opts['query'] = $this->getAuthQuery() + $opts['query'];
-		} else {
-			$opts['query'] = $this->getAuthQuery();
-		}
+        if (isset($opts['query'])) {
+            $opts['query'] = $this->getAuthQuery() + $opts['query'];
+        } else {
+            $opts['query'] = $this->getAuthQuery();
+        }
 
-		try {
-			$uri = urlencode($uri);
-			$response = $this->guzzleClient->request($method, $uri, $opts);
+        try {
+            $uri      = urlencode($uri);
+            $response = $this->guzzleClient->request($method, $uri, $opts);
 
-			return new FirebaseResponse($response);
-		} catch (ClientException $e) {
-			return new FirebaseResponse($e->getResponse());
-		}
-	}
+            return new FirebaseResponse($response);
+        } catch (ClientException $e) {
+            return new FirebaseResponse($e->getResponse());
+        }
+    }
 
-	/**
-	 * @return array
-	 */
-	public function getAuthQuery()
-	{
-		if ($this->token) {
-			return ['auth' => $this->token];
-		}
+    /**
+     * @return array
+     */
+    public function getAuthQuery()
+    {
+        if ($this->token) {
 
-		return [];
-	}
+            $resonse = $this->guzzleClient->request('POST',
+                'https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken?key=' . $this->apikey, [
+                    'json' =>
+                        [
+                            'returnSecureToken' => true,
+                            'token'             => $this->token
+                        ]
+                ]);
 
-	/**
-	 * @param $uri
-	 * @return FirebaseResponse
-	 */
-	public function stream($uri)
-	{
+            if ($resonse->getStatusCode() === 200) {
+                $idToken = json_decode($resonse->getBody()->getContents(), true) ['idToken'];
 
-		return $this->get($uri, [
-			'headers'         => [
-				'Accept' => 'text/event-stream'
-			],
-			'allow_redirects' => true,
-			'stream'          => true
-		]);
-	}
+                return ['auth' => $idToken];
+            }
+        }
 
-	/**
+        return [];
+    }
+
+    /**
+     * @param $uri
+     * @return FirebaseResponse
+     */
+    public function stream($uri)
+    {
+
+        return $this->get($uri, [
+            'headers'         => [
+                'Accept' => 'text/event-stream'
+            ],
+            'allow_redirects' => true,
+            'stream'          => true
+        ]);
+    }
+
+    /**
      * Decodes a token.
      *
      * @param string $secret
