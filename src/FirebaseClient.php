@@ -93,7 +93,7 @@ class FirebaseClient
             ->setExpiration(time() + 3600)// Configures the expiration time of the token (exp claim)
             ->setId(uniqid(), true)// Configures the id (jti claim), replicating as a header item
             ->set('uid', $uid)// Configures a new claim, called "uid"
-            ->set('admin', $admin)
+            ->set('claims', ['admin' => $admin])
             ->sign($signer, $this->privateKey)
             ->getToken();
         $this->token = (string)$token;
