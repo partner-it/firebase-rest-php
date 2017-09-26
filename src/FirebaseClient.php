@@ -48,6 +48,16 @@ class FirebaseClient
     private $apikey;
 
     /**
+     * @var string
+     */
+    private $idToken;
+
+    /**
+     * @var \DateTime
+     */
+    private $idTokenExpiration;
+
+    /**
      * @param array $config
      */
     public function __construct(array $config = [])
@@ -155,6 +165,10 @@ class FirebaseClient
     {
         if ($this->token) {
 
+            if ($this->idToken && $this->idTokenExpiration && $this->idTokenExpiration > new \DateTime('now')) {
+                return ['auth' => $this->idToken];
+            }
+
             $resonse = $this->guzzleClient->request('POST',
                 'https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyCustomToken?key=' . $this->apikey, [
                     'json' =>
@@ -165,7 +179,14 @@ class FirebaseClient
                 ]);
 
             if ($resonse->getStatusCode() === 200) {
-                $idToken = json_decode($resonse->getBody()->getContents(), true) ['idToken'];
+                $return      = json_decode($resonse->getBody()->getContents(), true);
+                $safeExpires = $return['expiresIn'] - 120;
+                $expires     = new \DateTime('now');
+                $expires->add(new \DateInterval('PT' . $safeExpires . 'S'));
+
+                $idToken                 = $return['idToken'];
+                $this->idToken           = $idToken;
+                $this->idTokenExpiration = $expires;
 
                 return ['auth' => $idToken];
             }
@@ -201,5 +222,4 @@ class FirebaseClient
     {
         return \JWT::decode($this->token, $secret, ['HS256']);
     }
-
 }
